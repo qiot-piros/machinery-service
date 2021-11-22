@@ -18,7 +18,7 @@ public class MachineryServiceApplication {
 
   void onApplicationStart(@Observes StartupEvent event) {
     LOG.info("qiot.machinery - Starting machinery-service setup");
-    factoryService.registerMachine();
+    factoryService.subscribeMachinery();
     LOG.info("qiot.machinery - Finished machinery-service setup");
   }
 }
