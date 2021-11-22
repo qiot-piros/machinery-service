@@ -5,13 +5,15 @@ import io.smallrye.config.ConfigMapping;
 @ConfigMapping(prefix = "machinery")
 public interface MachineryConfiguration {
 
-  String serial();
-
-  String name();
-
   String keyStorePassword();
 
   String systemInformationPath();
 
   String dataFolder();
+
+  String subscriptionFile();
+
+  String keystoreFile();
+
+  String truststoreFile();
 }
