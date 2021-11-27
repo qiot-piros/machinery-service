@@ -1,6 +1,7 @@
 package iot.qiot.piros.edge.facility.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
@@ -10,6 +11,7 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@RegisterForReflection
 public class SubscriptionResponse {
 
   @JsonProperty("id")

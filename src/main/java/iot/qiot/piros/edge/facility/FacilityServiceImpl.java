@@ -1,5 +1,6 @@
 package iot.qiot.piros.edge.facility;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import iot.qiot.piros.edge.MachineryServiceApplication;
@@ -10,12 +11,14 @@ import iot.qiot.piros.edge.facility.model.Machinery;
 import iot.qiot.piros.edge.facility.model.SubscriptionRequest;
 import iot.qiot.piros.edge.facility.model.SubscriptionResponse;
 import iot.qiot.piros.edge.service.FacilityService;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,14 +47,23 @@ public class FacilityServiceImpl implements FacilityService {
     this.machineryConfiguration = machineryConfiguration;
 
     this.objectMapper = new ObjectMapper();
+    this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
     this.objectMapper.registerModule(new JavaTimeModule());
   }
 
   @Override
   public void subscribeMachinery() {
     LOG.info("qiot.machinery.facility - Subscribing machinery");
-    Path subscriptionFile = Path.of(machineryConfiguration.subscriptionFile());
-    if (Files.exists(subscriptionFile)) {
+    String subscriptionFile = machineryConfiguration.subscriptionFile();
+    Path subscriptionFilePath = Path.of(subscriptionFile);
+    if (Files.exists(subscriptionFilePath)) {
+      try {
+        File file = Paths.get(subscriptionFile).toFile();
+        this.machinery = objectMapper.readValue(file, Machinery.class);
+      } catch (IOException e) {
+        LOG.error("qiot.machinery.facility - Error reading existing subscription");
+      }
       LOG.info("qiot.machinery.facility - Machinery already subscribed");
     } else {
       SubscriptionRequest request = buildSubscriptionRequest();
