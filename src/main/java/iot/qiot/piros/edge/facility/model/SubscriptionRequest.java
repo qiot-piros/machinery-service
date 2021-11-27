@@ -1,4 +1,4 @@
-package iot.qiot.piros.edge.factory.model;
+package iot.qiot.piros.edge.facility.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

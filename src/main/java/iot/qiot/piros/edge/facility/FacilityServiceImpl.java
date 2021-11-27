@@ -1,12 +1,14 @@
-package iot.qiot.piros.edge.factory;
+package iot.qiot.piros.edge.facility;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import iot.qiot.piros.edge.MachineryServiceApplication;
 import iot.qiot.piros.edge.configuration.MachineryConfiguration;
 import iot.qiot.piros.edge.core.model.SystemInformation;
-import iot.qiot.piros.edge.factory.client.FactoryServiceClient;
-import iot.qiot.piros.edge.factory.model.SubscriptionRequest;
-import iot.qiot.piros.edge.factory.model.SubscriptionResponse;
+import iot.qiot.piros.edge.facility.client.FacilityServiceClient;
+import iot.qiot.piros.edge.facility.model.Machinery;
+import iot.qiot.piros.edge.facility.model.SubscriptionRequest;
+import iot.qiot.piros.edge.facility.model.SubscriptionResponse;
+import iot.qiot.piros.edge.service.FacilityService;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,45 +26,55 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 @ApplicationScoped
-public class FactoryService {
+public class FacilityServiceImpl implements FacilityService {
 
   private static final Logger LOG = LoggerFactory.getLogger(MachineryServiceApplication.class);
 
-  private final FactoryServiceClient factoryClient;
+  private final FacilityServiceClient facilityClient;
   private final MachineryConfiguration machineryConfiguration;
   private final ObjectMapper objectMapper;
 
-  public FactoryService(
-      @RestClient FactoryServiceClient factoryClient,
+  private Machinery machinery;
+
+  public FacilityServiceImpl(
+      @RestClient FacilityServiceClient facilityClient,
       MachineryConfiguration machineryConfiguration) {
-    this.factoryClient = factoryClient;
+    this.facilityClient = facilityClient;
     this.machineryConfiguration = machineryConfiguration;
 
     this.objectMapper = new ObjectMapper();
+    this.objectMapper.findAndRegisterModules();
   }
 
+  @Override
   public void subscribeMachinery() {
-    LOG.info("qiot.machinery.factory - Subscribing machinery");
+    LOG.info("qiot.machinery.facility - Subscribing machinery");
     Path subscriptionFile = Path.of(machineryConfiguration.subscriptionFile());
     if (Files.exists(subscriptionFile)) {
-      LOG.info("qiot.machinery.factory - Machinery already subscribed");
+      LOG.info("qiot.machinery.facility - Machinery already subscribed");
     } else {
       SubscriptionRequest request = buildSubscriptionRequest();
-      SubscriptionResponse response = factoryClient.subscribeMachinery(request);
+      SubscriptionResponse response = facilityClient.subscribeMachinery(request);
       writeDataToDisk(response);
-      LOG.info("qiot.machinery.factory - Finished subscribing new machinery with id {}",
-          response.getId());
+      String id = response != null ? response.getId().toString() : "undefined";
+      this.machinery = new Machinery(id);
+      LOG.info("qiot.machinery.facility - Finished subscribing new machinery with id {}", id);
     }
   }
 
+  @Override
+  public String getMachineId() {
+    return machinery.getId();
+  }
+
   private void writeDataToDisk(SubscriptionResponse response) {
-    LOG.info("qiot.machinery.factory - Attempting to write data to disk");
+    LOG.info("qiot.machinery.facility - Attempting to write data to disk");
     try {
       writeSubscriptionDataToDisk(response);
       writeKeystoreToDisk(response.getKeystore());
       writeTruststoreToDisk(response.getTruststore());
-    } catch (IOException e) {
-      LOG.error("qiot.machinery.factory - Error writing data to disk", e);
+    } catch (Exception e) {
+      LOG.error("qiot.machinery.facility - Error writing data to disk", e);
     }
   }
 
@@ -70,7 +82,7 @@ public class FactoryService {
     Path subscriptionFile = Path.of(machineryConfiguration.subscriptionFile());
     Files.createDirectories(subscriptionFile.getParent());
     objectMapper.writeValue(subscriptionFile.toFile(), response);
-    LOG.info("qiot.machinery.factory - Successfully stored subscription data: {}", response);
+    LOG.info("qiot.machinery.facility - Successfully stored subscription data");
   }
 
   private void writeKeystoreToDisk(String keystoreBase64Encoded) throws IOException {
@@ -79,7 +91,7 @@ public class FactoryService {
         Base64.getDecoder().decode(keystoreBase64Encoded.getBytes(StandardCharsets.UTF_8));
     Files.createDirectories(keystorePath.getParent());
     Files.write(keystorePath, keystoreContent);
-    LOG.info("qiot.machinery.factory - Successfully stored keystore");
+    LOG.info("qiot.machinery.facility - Successfully stored keystore");
   }
 
   private void writeTruststoreToDisk(String trustStoreBase64Encoded) throws IOException {
@@ -88,7 +100,7 @@ public class FactoryService {
         Base64.getDecoder().decode(trustStoreBase64Encoded.getBytes(StandardCharsets.UTF_8));
     Files.createDirectories(truststorePath.getParent());
     Files.write(truststorePath, truststoreContent);
-    LOG.info("qiot.machinery.factory - Successfully stored truststore");
+    LOG.info("qiot.machinery.facility - Successfully stored truststore");
   }
 
   private SystemInformation getSystemInformation() {
@@ -97,7 +109,7 @@ public class FactoryService {
     try (InputStream ios = new FileInputStream(machineryConfiguration.systemInformationPath())) {
       systemInformationMap = yaml.load(ios);
     } catch (Exception e) {
-      LOG.error("qiot.machinery.factory - Error reading system information", e);
+      LOG.error("qiot.machinery.facility - Error reading system information", e);
     }
     return SystemInformation.builder()
         .serialNumber((String) systemInformationMap.getOrDefault(
