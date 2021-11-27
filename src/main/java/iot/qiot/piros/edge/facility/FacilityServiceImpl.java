@@ -1,6 +1,7 @@
 package iot.qiot.piros.edge.facility;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import iot.qiot.piros.edge.MachineryServiceApplication;
 import iot.qiot.piros.edge.configuration.MachineryConfiguration;
 import iot.qiot.piros.edge.core.model.SystemInformation;
@@ -43,7 +44,7 @@ public class FacilityServiceImpl implements FacilityService {
     this.machineryConfiguration = machineryConfiguration;
 
     this.objectMapper = new ObjectMapper();
-    this.objectMapper.findAndRegisterModules();
+    this.objectMapper.registerModule(new JavaTimeModule());
   }
 
   @Override
