@@ -6,6 +6,7 @@ import iot.qiot.piros.edge.core.model.production.ProductionItem;
 import iot.qiot.piros.edge.core.util.NumberUtil;
 import iot.qiot.piros.edge.production.ProductionService;
 import iot.qiot.piros.edge.production.model.ProductionStage;
+import iot.qiot.piros.edge.service.ProductLineService;
 import java.util.PrimitiveIterator;
 import javax.enterprise.event.Event;
 import javax.inject.Inject;
@@ -19,6 +20,8 @@ public abstract class AbstractStageService {
   @Inject
   protected ProductionService productionService;
   @Inject
+  protected ProductLineService productLineService;
+  @Inject
   protected Event<ProductionStageCompletedEvent> event;
   private PrimitiveIterator.OfLong sleepGenerator;
 
@@ -29,10 +32,11 @@ public abstract class AbstractStageService {
   public void handleStage() {
     ProductionItem item = productionService.getNextItem(getProductionStage());
     if (item == null) {
-      LOG.info("qiot.stage - No item available for stage {}", getProductionStage().getStageName());
+      LOG.info("qiot.stage - No item available for stage: {}", getProductionStage().getStageName());
       return;
     }
     sleep();
+    initRandomNumberGenerators(productLineService.getProductLineById(item.getProductLineId()));
     addStageData(item);
     stageCompleted(item);
   }
