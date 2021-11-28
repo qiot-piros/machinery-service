@@ -1,8 +1,6 @@
 package iot.qiot.piros.edge.metrics.service;
 
 import iot.qiot.piros.edge.core.model.event.ProductLineChangedEvent;
-import iot.qiot.piros.edge.core.model.event.ValidationFailureEvent;
-import iot.qiot.piros.edge.core.model.event.ValidationSuccessEvent;
 import iot.qiot.piros.edge.metrics.model.ProductionLineMetrics;
 import iot.qiot.piros.edge.production.model.ProductionStage;
 import java.util.Map;
