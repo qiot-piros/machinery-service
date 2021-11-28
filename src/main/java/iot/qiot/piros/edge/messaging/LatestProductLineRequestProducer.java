@@ -2,6 +2,7 @@ package iot.qiot.piros.edge.messaging;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
 import javax.jms.JMSContext;
 import javax.jms.JMSProducer;
 import javax.jms.Queue;
@@ -17,7 +18,8 @@ public class LatestProductLineRequestProducer {
 
   private static final Logger LOG = LoggerFactory.getLogger(LatestProductLineRequestProducer.class);
 
-  private final ActiveMQConnectionFactory connectionFactory;
+  @Inject
+  ActiveMQConnectionFactory connectionFactory;
 
   private JMSContext jmsContext;
   private JMSProducer jmsProducer;
@@ -26,9 +28,9 @@ public class LatestProductLineRequestProducer {
   @ConfigProperty(name = "qiot.productline.request.queue-prefix")
   String queueName;
 
-  public LatestProductLineRequestProducer(ActiveMQConnectionFactory connectionFactory) {
-    this.connectionFactory = connectionFactory;
-  }
+//  public LatestProductLineRequestProducer(ActiveMQConnectionFactory connectionFactory) {
+//    this.connectionFactory = connectionFactory;
+//  }
 
   @PostConstruct
   void init() {

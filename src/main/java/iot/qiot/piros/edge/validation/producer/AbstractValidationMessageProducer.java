@@ -52,7 +52,7 @@ public abstract class AbstractValidationMessageProducer {
     }
 
     protected void doRequestValidation(@Observes AbstractValidationEvent event) {
-        getLogger().debug("qiot.validation - {} stage validation request received", getStage());
+        getLogger().info("qiot.validation - {} stage validation request received", getStage());
         try {
             String payload = objectMapper.writeValueAsString(event);
             TextMessage message = jmsContext.createTextMessage();

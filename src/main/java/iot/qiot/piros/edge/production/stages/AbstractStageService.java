@@ -32,7 +32,7 @@ public abstract class AbstractStageService {
   public void handleStage() {
     ProductionItem item = productionService.getNextItem(getProductionStage());
     if (item == null) {
-      LOG.info("qiot.stage - No item available for stage: {}", getProductionStage().getStageName());
+//      LOG.info("qiot.stage - No item available for stage: {}", getProductionStage().getStageName());
     } else {
       sleep();
       initNumberGenerator(item);

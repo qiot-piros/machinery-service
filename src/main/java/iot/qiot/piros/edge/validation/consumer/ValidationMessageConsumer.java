@@ -13,6 +13,7 @@ import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
+import javax.inject.Inject;
 import javax.jms.IllegalStateRuntimeException;
 import javax.jms.JMSConsumer;
 import javax.jms.JMSContext;
@@ -32,7 +33,8 @@ public class ValidationMessageConsumer implements Runnable {
 
   private final ObjectMapper objectMapper;
 
-  private final ActiveMQConnectionFactory connectionFactory;
+  @Inject
+  ActiveMQConnectionFactory connectionFactory;
   private final FacilityService facilityService;
 
   private final Event<ValidationSuccessEvent> successEvent;
@@ -44,11 +46,9 @@ public class ValidationMessageConsumer implements Runnable {
   private JMSConsumer jmsConsumer;
 
   public ValidationMessageConsumer(
-      ActiveMQConnectionFactory connectionFactory,
       FacilityService facilityService,
       Event<ValidationSuccessEvent> successEvent,
       Event<ValidationFailureEvent> failureEvent) {
-    this.connectionFactory = connectionFactory;
     this.facilityService = facilityService;
     this.successEvent = successEvent;
     this.failureEvent = failureEvent;

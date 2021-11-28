@@ -12,6 +12,7 @@ import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Event;
 import javax.enterprise.event.Observes;
+import javax.inject.Inject;
 import javax.jms.IllegalStateRuntimeException;
 import javax.jms.JMSConsumer;
 import javax.jms.JMSContext;
@@ -29,7 +30,8 @@ public class LatestProductLineConsumer implements Runnable {
 
   private static final Logger LOG = LoggerFactory.getLogger(LatestProductLineConsumer.class);
 
-  private final ActiveMQConnectionFactory connectionFactory;
+  @Inject
+  ActiveMQConnectionFactory connectionFactory;
   private final FacilityService facilityService;
   private final Event<ProductLineChangedEvent> productLineChangedEvent;
   private final ExecutorService scheduler = Executors.newSingleThreadExecutor();
@@ -42,10 +44,8 @@ public class LatestProductLineConsumer implements Runnable {
   String queuePrefix;
 
   public LatestProductLineConsumer(
-      ActiveMQConnectionFactory connectionFactory,
       FacilityService facilityService,
       Event<ProductLineChangedEvent> productLineChangedEvent) {
-    this.connectionFactory = connectionFactory;
     this.facilityService = facilityService;
     this.productLineChangedEvent = productLineChangedEvent;
   }

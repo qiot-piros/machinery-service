@@ -47,7 +47,7 @@ public class ConnectionFactory {
       initialContext = new InitialContext(env);
       connectionFactory = (ActiveMQConnectionFactory) initialContext.lookup("ConnectionFactory");
     } catch (Exception e) {
-      LOG.error("qiot.amq - Error during amq init");
+      LOG.error("qiot.amq - Error during amq init", e);
     } finally {
       writeLock.unlock();
     }

@@ -59,7 +59,7 @@ public class ProductionService {
   }
 
 
-  @Scheduled(every = "30s")
+  @Scheduled(every = "3s")
   public void produce() {
     if (!productLineService.hasProductLineAvailable()) {
       LOG.warn("qiot.production - No product line available, halting production");
@@ -77,10 +77,12 @@ public class ProductionService {
   }
 
   void onValidationSuccess(@Observes ValidationSuccessEvent event) {
+    LOG.info("qiot.validation.consumer - Validation success: {}", event);
     toNextStage(event.getItemId(), event.getStage());
   }
 
   void onValidationFailure(@Observes ValidationFailureEvent event) {
+    LOG.info("qiot.validation.consumer - Validation failure: {}", event);
     removeItem(event.getItemId(), event.getStage());
   }
 
