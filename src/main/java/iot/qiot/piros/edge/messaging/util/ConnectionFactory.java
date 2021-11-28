@@ -1,5 +1,6 @@
 package iot.qiot.piros.edge.messaging.util;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
 import java.util.Hashtable;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -10,11 +11,13 @@ import javax.enterprise.inject.Produces;
 import javax.inject.Singleton;
 import javax.naming.InitialContext;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
+import org.apache.activemq.artemis.jndi.ActiveMQInitialContextFactory;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
+@RegisterForReflection(targets = {ActiveMQInitialContextFactory.class})
 public class ConnectionFactory {
 
   private static final Logger LOG = LoggerFactory.getLogger(ConnectionFactory.class);
