@@ -1,9 +1,11 @@
 package iot.qiot.piros.edge.production;
 
 import io.quarkus.scheduler.Scheduled;
+import iot.qiot.piros.edge.core.model.event.ProductionStageCompletedEvent;
+import iot.qiot.piros.edge.core.model.event.ValidationFailureEvent;
+import iot.qiot.piros.edge.core.model.event.ValidationSuccessEvent;
 import iot.qiot.piros.edge.core.model.production.ProductLine;
 import iot.qiot.piros.edge.core.model.production.ProductionItem;
-import iot.qiot.piros.edge.core.model.event.ProductionStageCompletedEvent;
 import iot.qiot.piros.edge.production.model.ProductionStage;
 import iot.qiot.piros.edge.service.ProductLineService;
 import iot.qiot.piros.edge.validation.ValidationService;
@@ -57,7 +59,7 @@ public class ProductionService {
   }
 
 
-  @Scheduled(every = "2s")
+  @Scheduled(every = "30s")
   public void produce() {
     if (!productLineService.hasProductLineAvailable()) {
       LOG.warn("qiot.production - No product line available, halting production");
@@ -74,10 +76,19 @@ public class ProductionService {
     validationService.validate(productionItem);
   }
 
+  void onValidationSuccess(@Observes ValidationSuccessEvent event) {
+    toNextStage(event.getItemId(), event.getStage());
+  }
+
+  void onValidationFailure(@Observes ValidationFailureEvent event) {
+    removeItem(event.getItemId(), event.getStage());
+  }
+
   private void createNewItem(UUID productLineId, int itemId) {
     ProductionItem productionItem = new ProductionItem();
     productionItem.setId(itemId);
     productionItem.setProductLineId(productLineId);
+    productionItem.setStage(ProductionStage.WEAVING);
     weavingQueue.add(productionItem);
   }
 
@@ -97,10 +108,27 @@ public class ProductionService {
     }
   }
 
+  public ProductionItem removeItem(int itemId, ProductionStage stage) {
+    switch (stage) {
+      case WEAVING:
+        return weavingValidation.remove(itemId);
+      case COLORING:
+        return coloringValidation.remove(itemId);
+      case PRINTING:
+        return printingValidation.remove(itemId);
+      case PACKAGING:
+        return packagingValidation.remove(itemId);
+      default:
+        LOG.info("qiot.production - Unknown production stage offered: {}", stage);
+        throw new UnsupportedOperationException("error.unsupported");
+    }
+  }
+
   public void addItemToValidationQueue(ProductionItem item) {
     switch (item.getStage()) {
       case WEAVING:
         weavingValidation.put(item.getId(), item);
+        break;
       case COLORING:
         coloringValidation.put(item.getId(), item);
         break;
@@ -116,22 +144,28 @@ public class ProductionService {
     }
   }
 
-
-  public void addItemToStage(ProductionItem item, String stage) {
-    ProductionStage productionStage = ProductionStage.valueOf(stage);
-    switch (productionStage) {
+  public ProductionItem toNextStage(int itemId, ProductionStage stage) {
+    ProductionItem item = null;
+    switch (stage) {
+      case WEAVING:
+        item = weavingValidation.remove(itemId);
+        coloringQueue.offer(item);
+        break;
       case COLORING:
-        coloringQueue.add(item);
+        item = coloringValidation.remove(itemId);
+        printingQueue.offer(item);
         break;
       case PRINTING:
-        printingQueue.add(item);
+        item = printingValidation.remove(itemId);
+        packagingQueue.offer(item);
         break;
       case PACKAGING:
-        packagingQueue.add(item);
+        item = packagingValidation.remove(itemId);
         break;
       default:
         LOG.info("qiot.production - Unknown production stage offered: {}", stage);
         throw new UnsupportedOperationException("error.unsupported");
     }
+    return item;
   }
 }

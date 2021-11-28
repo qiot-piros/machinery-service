@@ -7,6 +7,7 @@ import iot.qiot.piros.edge.messaging.LatestProductLineRequestProducer;
 import iot.qiot.piros.edge.service.FacilityService;
 import iot.qiot.piros.edge.service.ProductLineService;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -36,6 +37,8 @@ public class ProductLineServiceImpl implements ProductLineService {
     this.readWriteLock = new ReentrantReadWriteLock();
     this.readLock = readWriteLock.readLock();
     this.writeLock = readWriteLock.writeLock();
+
+    this.productLines = new TreeMap<>();
   }
 
   void init(@Observes SubscriptionCompletedEvent event) {
@@ -57,6 +60,16 @@ public class ProductLineServiceImpl implements ProductLineService {
   }
 
   @Override
+  public boolean hasProductLineAvailable(UUID productLineId) {
+    readLock.lock();
+    try {
+      return productLines != null && productLines.containsKey(productLineId);
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
   public ProductLine getCurrentProductLine() {
     return currentProductLine;
   }
@@ -70,4 +83,6 @@ public class ProductLineServiceImpl implements ProductLineService {
       readLock.unlock();
     }
   }
+
+
 }

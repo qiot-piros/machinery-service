@@ -33,12 +33,18 @@ public abstract class AbstractStageService {
     ProductionItem item = productionService.getNextItem(getProductionStage());
     if (item == null) {
       LOG.info("qiot.stage - No item available for stage: {}", getProductionStage().getStageName());
-      return;
+    } else {
+      sleep();
+      initNumberGenerator(item);
+      addStageData(item);
+      stageCompleted(item);
     }
-    sleep();
-    initRandomNumberGenerators(productLineService.getProductLineById(item.getProductLineId()));
-    addStageData(item);
-    stageCompleted(item);
+  }
+
+  private void initNumberGenerator(ProductionItem item) {
+    if (item != null && productLineService.hasProductLineAvailable(item.getProductLineId())) {
+      initRandomNumberGenerators(productLineService.getProductLineById(item.getProductLineId()));
+    }
   }
 
   private void sleep() {

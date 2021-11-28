@@ -1,11 +1,12 @@
-package iot.qiot.piros.edge.messaging;
+package iot.qiot.piros.edge.validation.consumer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import iot.qiot.piros.edge.core.model.production.ProductLine;
-import iot.qiot.piros.edge.core.model.event.ProductLineChangedEvent;
 import iot.qiot.piros.edge.core.model.event.SubscriptionCompletedEvent;
+import iot.qiot.piros.edge.core.model.event.ValidationFailureEvent;
+import iot.qiot.piros.edge.core.model.event.ValidationSuccessEvent;
 import iot.qiot.piros.edge.service.FacilityService;
+import iot.qiot.piros.edge.validation.model.ValidationResponse;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.annotation.PreDestroy;
@@ -25,36 +26,45 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @ApplicationScoped
-public class LatestProductLineConsumer implements Runnable {
+public class ValidationMessageConsumer implements Runnable {
 
-  private static final Logger LOG = LoggerFactory.getLogger(LatestProductLineConsumer.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ValidationMessageConsumer.class);
+
+  private final ObjectMapper objectMapper;
 
   private final ActiveMQConnectionFactory connectionFactory;
   private final FacilityService facilityService;
-  private final Event<ProductLineChangedEvent> productLineChangedEvent;
-  private final ExecutorService scheduler = Executors.newSingleThreadExecutor();
-  private final ObjectMapper objectMapper = new ObjectMapper();
 
+  private final Event<ValidationSuccessEvent> successEvent;
+  private final Event<ValidationFailureEvent> failureEvent;
+  private final ExecutorService scheduler = Executors.newSingleThreadExecutor();
+  @ConfigProperty(name = "qiot.production.validation.replyto-queue-prefix")
+  String queuePrefix;
   private JMSContext jmsContext;
   private JMSConsumer jmsConsumer;
 
-  @ConfigProperty(name = "qiot.productline.request.replyto-queue-prefix")
-  String queuePrefix;
-
-  public LatestProductLineConsumer(
+  public ValidationMessageConsumer(
       ActiveMQConnectionFactory connectionFactory,
       FacilityService facilityService,
-      Event<ProductLineChangedEvent> productLineChangedEvent) {
+      Event<ValidationSuccessEvent> successEvent,
+      Event<ValidationFailureEvent> failureEvent) {
     this.connectionFactory = connectionFactory;
     this.facilityService = facilityService;
-    this.productLineChangedEvent = productLineChangedEvent;
+    this.successEvent = successEvent;
+    this.failureEvent = failureEvent;
+
+    this.objectMapper = new ObjectMapper();
   }
 
   void init(@Observes SubscriptionCompletedEvent event) {
-    LOG.info("qiot.latest-product-line - Start init latest product line consumer");
     initConsumer();
     scheduler.submit(this);
-    LOG.info("qiot.latest-product-line - Finished init latest product line consumer");
+  }
+
+  @PreDestroy
+  void destroy() {
+    scheduler.shutdown();
+    jmsContext.close();
   }
 
   private void initConsumer() {
@@ -68,27 +78,32 @@ public class LatestProductLineConsumer implements Runnable {
     jmsConsumer = jmsContext.createConsumer(replyToQueue);
   }
 
-  @PreDestroy
-  void destroy() {
-    scheduler.shutdown();
-    jmsContext.close();
-  }
-
   @Override
   public void run() {
     while (true) {
       try {
         Message message = jmsConsumer.receive();
         String messagePayload = message.getBody(String.class);
-        ProductLine productLine = objectMapper.readValue(messagePayload, ProductLine.class);
-        ProductLineChangedEvent event = new ProductLineChangedEvent();
-        event.setProductLine(productLine);
-        productLineChangedEvent.fire(event);
+        ValidationResponse response =
+            objectMapper.readValue(messagePayload, ValidationResponse.class);
+        if (response.isValid()) {
+          ValidationSuccessEvent event = new ValidationSuccessEvent();
+          event.setProductLineId(response.getProductLineId());
+          event.setItemId(response.getItemId());
+          event.setStage(response.getStage());
+          successEvent.fire(event);
+        } else {
+          ValidationFailureEvent event = new ValidationFailureEvent();
+          event.setProductLineId(response.getProductLineId());
+          event.setItemId(response.getItemId());
+          event.setStage(response.getStage());
+          failureEvent.fire(event);
+        }
       } catch (JMSException | IllegalStateRuntimeException e) {
-        LOG.error("qiot.latest-product-line - Messaging client error {}", e.getMessage(), e);
+        LOG.error("qiot.validation.consumer - Messaging client error {}", e.getMessage(), e);
         initConsumer();
       } catch (JsonProcessingException e) {
-        LOG.error("qiot.latest-product-line - Object mapper error {}", e.getMessage(), e);
+        LOG.error("qiot.validation.consumer - Object mapper error {}", e.getMessage(), e);
 
       }
     }

@@ -7,6 +7,8 @@ public interface ProductLineService {
 
   boolean hasProductLineAvailable();
 
+  boolean hasProductLineAvailable(UUID productLineId);
+
   ProductLine getCurrentProductLine();
 
   ProductLine getProductLineById(UUID productLineId);
