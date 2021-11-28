@@ -69,7 +69,7 @@ public class ValidationMessageConsumer implements Runnable {
 
   private void initConsumer() {
     if (jmsContext != null) {
-      LOG.info("qiot.latest-product-line - Closing existing context");
+      LOG.info("qiot.validation.consumer - Closing existing context");
       jmsContext.close();
     }
     jmsContext = connectionFactory.createContext(Session.AUTO_ACKNOWLEDGE);
@@ -86,6 +86,7 @@ public class ValidationMessageConsumer implements Runnable {
         String messagePayload = message.getBody(String.class);
         ValidationResponse response =
             objectMapper.readValue(messagePayload, ValidationResponse.class);
+        LOG.info("qiot.validation.consumer - Received validation response {}", messagePayload);
         if (response.isValid()) {
           ValidationSuccessEvent event = new ValidationSuccessEvent();
           event.setProductLineId(response.getProductLineId());
