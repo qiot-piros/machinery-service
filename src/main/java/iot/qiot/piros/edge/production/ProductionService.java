@@ -6,6 +6,7 @@ import iot.qiot.piros.edge.core.model.event.ValidationFailureEvent;
 import iot.qiot.piros.edge.core.model.event.ValidationSuccessEvent;
 import iot.qiot.piros.edge.core.model.production.ProductLine;
 import iot.qiot.piros.edge.core.model.production.ProductionItem;
+import iot.qiot.piros.edge.metrics.service.MetricsService;
 import iot.qiot.piros.edge.production.model.ProductionStage;
 import iot.qiot.piros.edge.service.ProductLineService;
 import iot.qiot.piros.edge.validation.ValidationService;
@@ -28,6 +29,7 @@ public class ProductionService {
 
   private final ProductLineService productLineService;
   private final ValidationService validationService;
+  private final MetricsService metricsService;
 
   private final Queue<ProductionItem> weavingQueue;
   private final Queue<ProductionItem> coloringQueue;
@@ -43,9 +45,11 @@ public class ProductionService {
 
   public ProductionService(
       ProductLineService productLineService,
-      ValidationService validationService) {
+      ValidationService validationService,
+      MetricsService metricsService) {
     this.productLineService = productLineService;
     this.validationService = validationService;
+    this.metricsService = metricsService;
 
     this.weavingQueue = new ConcurrentLinkedQueue<>();
     this.coloringQueue = new ConcurrentLinkedQueue<>();
@@ -78,11 +82,13 @@ public class ProductionService {
 
   void onValidationSuccess(@Observes ValidationSuccessEvent event) {
     LOG.info("qiot.validation.consumer - Validation success: {}", event);
+    metricsService.addSuccess(event.getProductLineId(), event.getStage());
     toNextStage(event.getItemId(), event.getStage());
   }
 
   void onValidationFailure(@Observes ValidationFailureEvent event) {
     LOG.info("qiot.validation.consumer - Validation failure: {}", event);
+    metricsService.addFailure(event.getProductLineId(), event.getStage());
     removeItem(event.getItemId(), event.getStage());
   }
 
