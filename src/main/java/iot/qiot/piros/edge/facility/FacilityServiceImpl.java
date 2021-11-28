@@ -62,7 +62,8 @@ public class FacilityServiceImpl implements FacilityService {
         File file = Paths.get(subscriptionFile).toFile();
         this.machinery = objectMapper.readValue(file, Machinery.class);
       } catch (IOException e) {
-        LOG.error("qiot.machinery.facility - Error reading existing subscription");
+        LOG.error("qiot.machinery.facility - Error reading existing subscription", e);
+        throw new RuntimeException("Cannot read subscriptionFile");
       }
       LOG.info("qiot.machinery.facility - Machinery already subscribed");
     } else {
