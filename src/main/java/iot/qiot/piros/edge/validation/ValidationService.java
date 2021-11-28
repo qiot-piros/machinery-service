@@ -68,7 +68,7 @@ public class ValidationService {
   }
 
   private void addValidationData(AbstractValidationEvent event, ProductionItem item) {
-    event.setMachineId(facilityService.getMachineId());
+    event.setMachineryId(facilityService.getMachineId());
     event.setItemId(item.getId());
     event.setProductLineId(item.getProductLineId());
     event.setStage(item.getStage());

@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import iot.qiot.piros.edge.core.model.event.AbstractValidationEvent;
 import iot.qiot.piros.edge.production.model.ProductionStage;
 import iot.qiot.piros.edge.service.FacilityService;
-import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.jms.DeliveryMode;
 import javax.jms.JMSContext;

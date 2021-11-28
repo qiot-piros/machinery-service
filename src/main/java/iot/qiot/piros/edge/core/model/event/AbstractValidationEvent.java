@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AbstractValidationEvent {
 
-  private String machineId;
+  private String machineryId;
   private UUID productLineId;
   private int itemId;
   private ProductionStage stage;

@@ -151,14 +151,17 @@ public class ProductionService {
     switch (stage) {
       case WEAVING:
         item = weavingValidation.remove(itemId);
+        item.setStage(ProductionStage.COLORING);
         coloringQueue.offer(item);
         break;
       case COLORING:
         item = coloringValidation.remove(itemId);
+        item.setStage(ProductionStage.PRINTING);
         printingQueue.offer(item);
         break;
       case PRINTING:
         item = printingValidation.remove(itemId);
+        item.setStage(ProductionStage.PACKAGING);
         packagingQueue.offer(item);
         break;
       case PACKAGING:
